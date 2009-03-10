@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <FilesToCopy Include="Models\Models.Core.dll" />
+    <FilesToCopy Include="Models\Models.dll" />
+    <FilesToCopy Include="Models\System.Data.Sqlite.dll" />
+    
+    <FilesToCopy Include="ExecutionEngine\bin\debug\ExecutionEngine.dll" />       
+  </ItemGroup>
+  <Target Name="Build">
+    <MSBuild Projects="Models\Models.Core\Models.Core.csproj" />
+    <MSBuild Projects="Models\Models.csproj" />
+    <MSBuild Projects="ExecutionEngine\ExecutionEngine.vbproj" />
+
+    <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="Scripts\Setup" />
+  </Target>
+</Project>
