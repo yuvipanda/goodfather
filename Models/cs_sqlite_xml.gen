@@ -1,0 +1,194 @@
+<% 	
+	@@type_mapping = { "Number" => "double",
+					 "String" => "string",
+					 "DateTime" => "DateTime"}
+
+	def write_field_definition(name, type)
+		if @@type_mapping.has_key?(type) then
+			mapped_type=@@type_mapping[type] 
+		else
+			mapped_type=type
+		end
+
+		return "#{mapped_type} #{name}"
+	end
+
+	def write_collection_definition(name, type)		
+		if @@type_mapping.has_key?(type) then
+			mapped_type=@@type_mapping[type] 
+		else
+			mapped_type=type
+		end
+
+		return "List<#{mapped_type}> #{name} = new List<#{mapped_type}>()"
+	end
+
+	def write_field_tostring(name, type)
+		if type == "DateTime" then
+			return "new XElement(\"#{name}\",#{name}.ToString(\"s\"))"
+		elsif type == "String" or type == "Number" then
+			return "new  XElement(\"#{name}\",#{name}.ToString())"
+		else
+			return "#{name}.ToXML()"
+		end
+	end
+
+	def write_field_fromstring(name,type)
+		if type == "DateTime" then
+			return "DateTime.Parse(#{name}.Value).ToUniversalTime()" #Ignores timezone and converts to UTC
+		elsif type == "Number" then
+			return "Double.Parse(#{name}.Value)"
+		elsif type == "String" then
+			return "#{name}.Value"
+		else
+			return "new #{type}(#{name})"
+		end
+	end
+
+	def write_default_value(type)
+		if type == "String" then
+			return "\"\""
+		elsif type == "Number" then
+			return "0.0"
+		elsif type == "DateTime" then
+			return "new DateTime(1970,1,1)"
+		else
+			return "new #{type}()"
+		end
+	end
+%>
+using System;
+using System.Data.SQLite;
+using Models.Core;
+using System.Collections;
+using System.Collections.Generic;
+using System.Xml.Linq;
+
+namespace <%= model.name %>  
+{
+[SupportedExtension("<%= model.extension %>")]
+public class <%= model.name %> : IDataStore
+{
+	List<<%= model.major_data_type.name%>> _Data = new List<<%= model.major_data_type.name%>>();
+	
+	public List<string> MajorDataTypeTemplates
+	{
+		get 
+		{
+			List<string> templates = new List<string>();
+			<% model.major_data_type.templates.each do |template| %>
+			templates.Add("<%= template.name %>");			
+			<% end %>
+			return templates;
+		}
+	}
+
+	public System.Collections.IList Data
+	{
+		get { return _Data;	}
+	}
+
+	public void Load(string FileName)
+    {
+        SQLiteConnection con = new SQLiteConnection("Data Source=" + FileName);
+        con.Open();
+
+        SQLiteCommand select = con.CreateCommand();
+        select.CommandText = "SELECT * FROM Data";
+
+        var dr = select.ExecuteReader();
+        while (dr.Read())
+        {
+            _Data.Add(new <%= model.major_data_type.name%>(XElement.Parse(dr[0].ToString())));
+        }
+        
+        con.Close();
+
+    }
+
+    private void CreateSQLiteFile(SQLiteConnection Connection)
+    {
+        SQLiteCommand createTables = Connection.CreateCommand();
+        createTables.CommandText = "CREATE TABLE Data (Data)";
+        createTables.ExecuteNonQuery();        
+    }
+
+    public void Save(string FileName)
+    {
+        if (System.IO.File.Exists(FileName))
+        {
+            System.IO.File.Delete(FileName);
+        }
+
+        SQLiteConnection con = new SQLiteConnection("Data Source=" + FileName);
+        con.Open();
+
+        CreateSQLiteFile(con);
+
+        var trans = con.BeginTransaction();
+
+        foreach (<%= model.major_data_type.name%> item in _Data)
+        {
+            var insert = con.CreateCommand();
+            insert.CommandText = "INSERT INTO data VALUES (@Data)";
+            insert.Parameters.Add(new SQLiteParameter("Data", item.ToXML().ToString()));
+            insert.ExecuteNonQuery();
+        }
+        
+        trans.Commit();
+        con.Close();
+    }
+}
+
+<% model.types.each do |type| %>
+
+<% type.templates.each do |template| %>[Template("<%= template.name %>")]<% end %>
+public class <%= type.name %>
+{
+	<% type.fields.each do |field| %>
+		public <%= write_field_definition(field[0], field[1]) %> = <%= write_default_value(field[1]) %>;
+	<% end %>
+	
+	<% type.collections.each do |collection| %>
+		public <%= write_collection_definition(collection[0], collection[1]) %>;
+	<%end %>
+		
+		internal <%= type.name %> (XElement xml)
+		{
+			<% type.fields.each do |field| %>
+			<%= field[0] %> = <%= write_field_fromstring("xml.Element(\"#{field[0]}\")",field[1]) %>;
+			<% end %>
+
+			<% type.collections.each do |collection| %>
+			foreach (var element in xml.Element("<%= collection[0] %>").Elements())
+			{
+				<%= collection[0] %>.Add(<%= write_field_fromstring("element", collection[1]) %>);
+			}
+			<% end %>
+		}
+
+		internal XElement ToXML()
+		{
+			XElement element = new XElement("<%= type.name %>");
+			<% type.fields.each do |field| %>
+			element.Add(<%= write_field_tostring(field[0],field[1]) %>);
+			<% end %>
+
+			<% type.collections.each do |collection| %>
+			XElement <%=collection[0]%>Element = new XElement("<%= collection[0] %>");
+			foreach(var item in <%= collection[0] %>)
+			{
+				<%=collection[0]%>Element.Add(<%= write_field_tostring('item',collection[1])%>);
+			}
+
+			element.Add(<%=collection[0]%>Element);
+			<% end %>
+			return element;
+		}
+
+		public <%= type.name %>() { }
+
+
+}
+<% end %>
+}

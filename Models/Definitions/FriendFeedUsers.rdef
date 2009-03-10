@@ -1,0 +1,53 @@
+model = Model.new('FriendFeedUsers', 'ffusers')
+
+user = Type.new('User',
+				{'Name'=>'String', 
+				 'ID'=>'String', 
+				 'NickName'=>'String', 
+				 'ProfileURL'=>'String',
+				 'TotalComments'=>'Number',
+				 'TotalLikes'=>'Number',
+				 'LastWeekComments'=>'Number',
+				 'LastWeekLikes'=>'Number'},
+				{'Subscriptions'=>'Subscription',
+				 'Services'=>'Service',
+				 'Rooms'=>'Room'},
+				 []
+			   )
+room = Type.new('Room',
+				{'Name'=>'String', 
+				 'ID'=>'String', 
+				 'NickName'=>'String', 
+				 'URL'=>'String'},
+				 {},
+				 []
+			   )
+subscription = Type.new('Subscription',
+						{'Name'=>'String', 
+						 'ID'=>'String', 
+						 'NickName'=>'String', 
+						 'ProfileURL'=>'String'},
+						 {},
+						 []
+					   )
+
+service = Type.new('Service',
+					{'Name'=>'String', 
+					 'ID'=>'String', 
+					 'ProfileURL'=>'String', 
+					 'IconURL'=>'String'},
+					 {},
+					 []
+				   )
+
+
+
+model.types = []
+model.types.push(user)
+model.types.push(subscription)
+model.types.push(room)
+model.types.push(service)
+
+model.major_data_type = user
+
+

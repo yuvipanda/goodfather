@@ -1,0 +1,22 @@
+model = Model.new('TwitterSearch', 'tweetssearch')
+
+tweet = Type.new('Tweet',
+				{'Text'=>'String',
+				 'ReplyToUser'=>'String',
+				 'AuthorID' =>'String',
+				 'Author'=>'String',
+				 'Language'=>'String',
+				 'IconURL'=>'String',
+				 'Published'=>'DateTime',
+				 'ID'=>'String'},
+				{},
+				[]
+			   )
+
+
+model.types = []
+model.types.push(tweet)
+
+model.major_data_type = tweet
+
+

@@ -1,0 +1,14 @@
+model = Model.new('CLOC', 'cloc')
+
+lang = Type.new('Language',
+				{'Name'=>'String', 'Files'=>'Number', 'Blank'=>'Number', 'Comment'=>'Number', 'Code'=>'Number'},
+				{},
+				[]
+			   )
+
+model.types = []
+model.types.push(lang)
+
+model.major_data_type = lang
+
+

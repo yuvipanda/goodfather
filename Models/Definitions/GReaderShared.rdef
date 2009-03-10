@@ -1,0 +1,15 @@
+model = Model.new('GoogleReaderShared', 'grshared')
+
+post = Type.new('Post',
+				{'Source'=>'String','Annotation'=>'String'},
+				{},
+				[Template.new('Postable')]
+			   )
+
+
+model.types = []
+model.types.push(post)
+
+model.major_data_type = post
+
+
