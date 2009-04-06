@@ -77,6 +77,13 @@ def stories_from_page(uri)
 
 	heditems.each do |item|
 		story_from_heditem(item)
+		(item/"div[@CLASS='lnkr']").each do |lnkr|
+			if lnkr.at('cite') != nil
+				l = story_from_lnkr(lnkr)
+				puts "\t" + l.url
+			end
+
+		end
 	end
 end
 
