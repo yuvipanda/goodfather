@@ -1,12 +1,21 @@
 import jsonpickle
+import simplejson
 import sqlite3
 import os
 
-#Inherit from this for objects - eg. Tweet, BlogPost, Comment, etc
 class Persistable:
-	
-	def tojson(self):
-		return jsonpickle.encode(self, unpicklable=False)
+
+	def __maptype(self, value):
+		if type(value) is dict:
+			return Persistable(v)
+		elif type(value) is list:
+			return [self.__maptype(v) for v in value]
+		else:
+			return value
+
+	def __init__(self, json):
+		for k, v in json.items():
+			self.__dict__[k] = self.__maptype(v)
 
 #Inherit from this for container - eg. Blog, TweetsSearch, etc
 class PersistanceContainer:
@@ -14,7 +23,7 @@ class PersistanceContainer:
 	def persist(self, item):
 		self.connection.execute(
 				'INSERT INTO Data VALUES (:Data)', 
-				{'Data':item.tojson()}
+				{'Data':jsonpickle.encode(item, unpickable=False)}
 				)
 		self.connection.commit()
 
@@ -28,9 +37,16 @@ class PersistanceContainer:
 		if createnew: 
 			self.connection.execute(r'CREATE Table Data (Data)')
 
-
-	def __del__(self):
-		#clean up the connection when the app stops.
-		#No idea why this throws
-		#self.connection.close()
-		pass
+#Does a streaming Read. Use for large datasets.
+#Pro: Much less memory usage. Con: No in-memory caching
+def read_data(filepath, streaming=False):
+	conn = sqlite3.connect(filepath)
+	cur = conn.cursor()
+	cur.execute("SELECT * from Data")
+	if streaming:
+		while True:
+			row = cur.fetchone()
+			if row:			
+				yield Persistable(simplejson.loads(row[0]))
+	else:
+		return [Persistable(simplejson.loads(row[0])) for row in cur.fetchall()]
