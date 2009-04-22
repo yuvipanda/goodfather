@@ -1,5 +1,4 @@
 import re
-import sys
 import locale
 from urllib2 import urlopen
 
