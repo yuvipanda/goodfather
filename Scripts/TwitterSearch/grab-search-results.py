@@ -1,5 +1,4 @@
 import simplejson as json
-from Tweets import Tweet, TwitterSearch
 from urllib2 import urlopen
 from dateutil import parser
 from datetime import datetime
