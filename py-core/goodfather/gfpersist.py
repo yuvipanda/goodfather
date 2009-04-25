@@ -41,7 +41,7 @@ class PersistanceContainer:
 
 #Does a streaming Read. Use for large datasets.
 #Pro: Much less memory usage. Con: No in-memory caching
-def read_streaming(filepath, streaming=False):
+def read_streaming(filepath):
 	conn = sqlite3.connect(database=filepath)
 	cur = conn.cursor()
 	cur.execute("SELECT * from Data")
@@ -50,6 +50,8 @@ def read_streaming(filepath, streaming=False):
 		row = cur.fetchone()
 		if row:			
 			yield Persistable(simplejson.loads(row[0]))
+		else:
+			break
 
 #Does a all-at once Read. Loads all the objects into memory
 def read_all(filepath):
