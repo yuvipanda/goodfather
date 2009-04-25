@@ -6,6 +6,14 @@ from datetime import datetime
 from urllib import urlencode
 import sys
 
+from goodfather import gfpersist
+
+class Tweet(gfpersist.Persistable):
+	pass
+
+class TwitterSearch(gfpersist.PersistanceContainer):
+	pass
+
 def TweetFromNode(node):
 	t = Tweet()
 	t.Text = node['text']
