@@ -2,7 +2,7 @@ from goodfather import gfpersist
 from goodfather.util import googlesearch
 from BeautifulSoup import BeautifulSoup
 from urllib2 import urlopen
-import pdb
+import sys
 
 class Tag (gfpersist.Persistable):
 	pass
