@@ -21,12 +21,33 @@ class Persistable:
 #Inherit from this for container - eg. Blog, TweetsSearch, etc
 class PersistanceContainer:
 
-	def persist(self, item):
+	def persist(self, key, item):
 		self.cursor.execute(
-				'INSERT INTO Data VALUES (?)', 
-				(jsonpickle.encode(item, unpickable=False),)
+				'INSERT INTO Data VALUES (?, ?)', 
+				(key, jsonpickle.encode(item, unpickable=True),)
 				)
 		self.connection.commit()
+
+	def has_key(self, key):
+		self.cursor.execute(
+				'SELECT Key FROM Data WHERE Key=?',
+				(key, )
+				)
+		if self.cursor.fetchone():
+			return True
+		else:
+			return False
+	
+	def get(self, key):
+		self.cursor.execute(
+				'SELECT Key, Data FROM Data WHERE Key=?',
+				(key, )
+				)
+		row = self.cursor.fetchone()
+		if row:
+			return Persistable(simplejson.loads(row[1]))
+		else:
+			return None
 
 	def __init__(self, filepath, createnew = True):
 		fileexists = os.path.exists(filepath)
@@ -37,14 +58,15 @@ class PersistanceContainer:
 		self.cursor = self.connection.cursor()
 
 		if createnew: 
-			self.cursor.execute(r'CREATE Table Data (Data)')
+			self.cursor.execute(r'CREATE TABLE Data (Key, Data)')
+			self.cursor.execute(r'CREATE INDEX KeyIndex ON Data (Key)')
 
 #Does a streaming Read. Use for large datasets.
 #Pro: Much less memory usage. Con: No in-memory caching
 def read_streaming(filepath):
 	conn = sqlite3.connect(database=filepath)
 	cur = conn.cursor()
-	cur.execute("SELECT * from Data")
+	cur.execute("SELECT Data from Data")
 	#if streaming:
 	while True:
 		row = cur.fetchone()
@@ -57,5 +79,5 @@ def read_streaming(filepath):
 def read_all(filepath):
 	conn = sqlite3.connect(database=filepath)
 	cur = conn.cursor()
-	cur.execute("SELECT * from Data")
+	cur.execute("SELECT Data from Data")
 	return [Persistable(simplejson.loads(row[0])) for row in cur.fetchall()]

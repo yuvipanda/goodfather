@@ -37,7 +37,7 @@ if __name__ == '__main__':
 		results = json.loads(urlopen(url).read())
 		tweets = [TweetFromNode(x) for x in results['results']]
 		for t in tweets:
-			ts.persist(t)
+			ts.persist(t.ID,t)
 			count += 1
 			if count % 10 == 0:
 				print "Done %s Tweets" % count
