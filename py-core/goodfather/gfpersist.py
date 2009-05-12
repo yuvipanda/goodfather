@@ -49,7 +49,7 @@ class PersistanceContainer:
 		else:
 			return None
 
-	def __init__(self, filepath, createnew = True):
+	def __init__(self, filepath, createnew = False):
 		fileexists = os.path.exists(filepath)
 		if createnew and fileexists:
 			os.remove(filepath) 
@@ -57,9 +57,10 @@ class PersistanceContainer:
 		self.connection=sqlite3.connect(database=filepath)
 		self.cursor = self.connection.cursor()
 
-		if createnew: 
+		if createnew or not fileexists: 
 			self.cursor.execute(r'CREATE TABLE Data (Key, Data)')
 			self.cursor.execute(r'CREATE INDEX KeyIndex ON Data (Key)')
+			self.connection.commit()
 
 #Does a streaming Read. Use for large datasets.
 #Pro: Much less memory usage. Con: No in-memory caching
