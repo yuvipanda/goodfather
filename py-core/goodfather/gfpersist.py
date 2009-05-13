@@ -1,22 +1,47 @@
-import jsonpickle
 import simplejson
 import sqlite3
 import os
+from datetime import datetime
+import dateutil.parser
 
 class Persistable:
 
-	def __maptype(self, value):
-		if type(value) is dict:
-			return Persistable(value)
-		elif type(value) is list:
-			return [self.__maptype(v) for v in value]
+	def __reverse_maptype(self, value):
+		if isinstance(value, dict):
+			if value.has_key('__type__'):
+				if value['__type__'] == 'datetime':
+					return dateutil.parser.parse(value['__value__'])
+			else:
+				return Persistable(value)
+		elif isinstance(value, list):
+			return [self.__reverse_maptype(v) for v in value]
 		else:
 			return value
+
+	def __maptype(self, value):
+		if isinstance(value, list):
+			return [self.__maptype(v) for v in value]
+		elif isinstance(value, Persistable):
+			return Persistable.tojson()
+		elif isinstance(value, datetime):
+			return {
+					'__type__':'datetime',
+					'__value__':value.isoformat()
+					}
+		else:			
+			return unicode(value)
+
+	def tojson(self):
+		return simplejson.dumps(
+				dict( [ (k, self.__maptype(v)) 
+						for k, v in self.__dict__.items()
+						]))
+
 
 	def __init__(self, json=None):
 		if json:
 			for k, v in json.items():
-				self.__dict__[k] = self.__maptype(v)
+				self.__dict__[k] = self.__reverse_maptype(v)
 
 #Inherit from this for container - eg. Blog, TweetsSearch, etc
 class PersistanceContainer:
@@ -24,7 +49,7 @@ class PersistanceContainer:
 	def persist(self, key, item):
 		self.cursor.execute(
 				'INSERT INTO Data VALUES (?, ?)', 
-				(key, jsonpickle.encode(item, unpickable=True),)
+				(key, item.tojson(),)				
 				)
 		self.connection.commit()
 
