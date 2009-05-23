@@ -43,6 +43,41 @@ class Persistable:
             for k, v in json.items():
                 self.__dict__[k] = self.__reverse_maptype(v)
 
+class MetaDict():
+    def __init__(self, connection, cursor):
+        self.connection = connection
+        self.cursor = cursor
+
+    def __getitem__(self, key):
+        self.cursor.execute("SELECT Value FROM Meta")
+        row = self.cursor.fetchone()
+        if row:
+            return row[0]
+        else:
+            raise KeyError
+
+    def __setitem__(self, key, value):
+        self.cursor.execute('SELECT Key FROM Meta WHERE Key = ?', (key, ))
+        if self.cursor.fetchone():
+            self.cursor.execute(
+                    'UPDATE Meta SET Value = ? WHERE Key = ?', 
+                    (value, key )
+                    )
+        else:
+            self.cursor.execute(
+                    "INSERT INTO Meta VALUES (?, ?)", 
+                    (key, value,)
+                    )
+        self.connection.commit()
+
+    def __delitem__(self, key):
+        self.cursor.execute(
+                "DELETE FROM Meta WHERE Key = ?",
+                (key,)
+                )
+        self.cursor.commit()
+
+
 #Inherit from this for container - eg. Blog, TweetsSearch, etc
 class PersistanceContainer:
 
@@ -84,8 +119,12 @@ class PersistanceContainer:
 
         if createnew or not fileexists: 
             self.cursor.execute(r'CREATE TABLE Data (Key, Data)')
+            self.cursor.execute(r'CREATE TABLE Meta (Key, Value)')          
             self.cursor.execute(r'CREATE INDEX KeyIndex ON Data (Key)')
+            self.cursor.execute(r'CREATE INDEX MetaIndex ON Meta (Key)')
             self.connection.commit()
+
+        self.Meta = MetaDict(self.connection, self.cursor)
 
     def read_all(self):
         self.cursor.execute("SELECT Data from Data")
@@ -95,4 +134,3 @@ class PersistanceContainer:
                 yield Persistable(simplejson.loads(row[0]))
             else:
                 break
-
