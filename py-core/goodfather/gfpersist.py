@@ -87,23 +87,14 @@ class PersistanceContainer:
 			self.cursor.execute(r'CREATE INDEX KeyIndex ON Data (Key)')
 			self.connection.commit()
 
-#Does a streaming Read. Use for large datasets.
-#Pro: Much less memory usage. Con: No in-memory caching
-def read_streaming(filepath):
-	conn = sqlite3.connect(database=filepath)
-	cur = conn.cursor()
-	cur.execute("SELECT Data from Data")
-	#if streaming:
-	while True:
-		row = cur.fetchone()
-		if row:			
-			yield Persistable(simplejson.loads(row[0]))
-		else:
-			break
+    def read_all(self):
+    	self.cursor.execute("SELECT Data from Data")
+    	while True:
+	    	row = self.cursor.fetchone()
+		    if row:			
+			    yield Persistable(simplejson.loads(row[0]))
+    		else:
+	    		break
 
-#Does a all-at once Read. Loads all the objects into memory
-def read_all(filepath):
-	conn = sqlite3.connect(database=filepath)
-	cur = conn.cursor()
-	cur.execute("SELECT Data from Data")
-	return [Persistable(simplejson.loads(row[0])) for row in cur.fetchall()]
+
+

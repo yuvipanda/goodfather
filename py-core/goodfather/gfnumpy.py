@@ -3,7 +3,8 @@ from gfpersist import *
 
 def load_recarray(filepath, select, headers, filter=None):
 	records = []
-	for p in read_streaming(filepath):
+    pc = PersistanceContainer(filepath)
+	for p in pc.read_all():
 		if (not filter) or filter(p):
 			records.append(select(p))
 	
