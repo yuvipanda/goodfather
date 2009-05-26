@@ -22,7 +22,7 @@ class Persistable:
         if isinstance(value, list):
             return [self.__maptype(v) for v in value]
         elif isinstance(value, Persistable):
-            return Persistable.tojson()
+            return value.tojson()
         elif isinstance(value, datetime):
             return {
                     '__type__':'datetime',
