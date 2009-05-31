@@ -29,7 +29,7 @@ class Persistable:
                     '__value__':value.isoformat()
                     }
         else:           
-            return unicode(value)
+            return unicode(value, encoding='UTF-8')
 
     def tojson(self):
         return simplejson.dumps(
