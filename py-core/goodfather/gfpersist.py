@@ -28,8 +28,10 @@ class Persistable:
                     '__type__':'datetime',
                     '__value__':value.isoformat()
                     }
-        else:           
+        elif isinstance(value, str):
             return unicode(value, encoding='UTF-8')
+        else:           
+            return value
 
     def tojson(self):
         return simplejson.dumps(
